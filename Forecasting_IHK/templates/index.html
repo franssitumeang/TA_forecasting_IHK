@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% load staticfiles %}
+    <title>Forecasting IHK</title>
+    <!-- Import siimple -->
+    <link rel="stylesheet" type="text/css" href="{% static 'css/siimple.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}"/>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script> -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script src="{% static 'js/function.js' %}"></script>
+    <script src="{% static 'js/Chart.bundle.js' %}"></script>
+    <script src="{% static 'js/utils.js' %}"></script>
+</head>
+    <body>
+        <div class="siimple-box">
+            <div class="siimple-box-title">Simulator Forecasting IHK</div>
+            <div class="siimple-box-subtitle">Using Hybrid ARIMAX - SVR Algorithm</div>
+            <div class="siimple-tip siimple-tip--teal">
+                ParaSid 2
+            </div>
+        </div>
+        <div class="siimple-grid">
+            <div class="siimple-grid-row">
+                <div class="siimple-grid-col siimple-grid-col--2">
+                    <div class="fileUpload siimple-btn siimple-btn--red">
+                        <span>Select File CSV...</span>
+                        <input id="upload_btn" type="file" class="upload" />
+                    </div>
+                </div>
+            </div>
+            <div class="siimple-grid-row">
+                <div class="siimple-grid-col siimple-grid-col--12">
+                    <span id="text_csv" class="siimple-p" style="margin-top: -15px;">No File Selected.</span>
+                </div>
+                <div class="siimple-grid-col siimple-grid-col--4">
+                    <div class="siimple-btn siimple-btn--navy" id="btn_plot_original">View Original Data</div>
+                    <div class="siimple-spinner siimple-spinner--navy" style="margin-top: -16px; " id="loading_plot_original"></div>
+                </div>
+                <div class="siimple-grid-col siimple-grid-col--12">
+                    <div style="width:75%;">
+                        <canvas id="canvas_original"></canvas>
+                    </div>
+                </div>
+                <div class="siimple-grid-col siimple-grid-col--4">
+                    <div class="siimple-btn siimple-btn--navy" id="btn_plot_seasonal_trend">View Trend  and Seasonal Data</div>
+                    <div class="siimple-spinner siimple-spinner--navy" style="margin-top: -16px; margin-right: 120px;" id="loading_plot_decomposition"></div>
+                </div>                
+                <div class="siimple-grid-row">
+                    <div class="siimple-grid-col siimple-grid-col--6">
+                        <div style="width:100%;">
+                            <canvas id="canvas_trend"></canvas>
+                        </div>
+                    </div>
+                    <div class="siimple-grid-col siimple-grid-col--6">
+                        <div style="width:100%;">
+                            <canvas id="canvas_seasonal"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="siimple-grid-col siimple-grid-col--4">
+                    <div class="siimple-btn siimple-btn--navy" id="btn_plot_stationarity">View Stationarity Data</div>
+                    <div class="siimple-spinner siimple-spinner--navy" style="margin-top: -16px; margin-right: 180px;" id="loading_plot_stationarity"></div>
+                </div>
+                <div class="siimple-grid-col siimple-grid-col--12">
+                    <div style="width:75%;">
+                        <canvas id="canvas_stationary"></canvas>
+                    </div>
+                </div>
+                <div class="siimple-grid-col siimple-grid-col--4">
+                    <div class="siimple-btn siimple-btn--navy" id="btn_plot_acf_pacf">View Graphic ACF and PACF</div>
+                    <div class="siimple-spinner siimple-spinner--navy" style="margin-top: -16px; margin-right: 120px;" id="loading_plot_acf_pacf"></div>
+                </div>
+                <div class="siimple-grid-row">
+                    <div class="siimple-grid-col siimple-grid-col--6">
+                        <div style="width:100%;">
+                            <canvas id="canvas_acf"></canvas>
+                        </div>
+                    </div>
+                    <div class="siimple-grid-col siimple-grid-col--6">
+                        <div style="width:100%;">
+                            <canvas id="canvas_pacf"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="siimple-grid-row">
+                    <div class="siimple-grid-col siimple-grid-col--2">
+                        <label class="siimple-label">Enter ACF Lag (AR)</label><br>
+                        <input type="text" class="siimple-input" placeholder="ACF Lag" id="input_AR">
+                    </div>
+                    <div class="siimple-grid-col siimple-grid-col--2">
+                        <label class="siimple-label">Diffrencinge (I)</label><br>
+                        <input type="text" class="siimple-input" id="input_I" disabled="true">
+                    </div>
+                    <div class="siimple-grid-col siimple-grid-col--2">
+                        <label class="siimple-label">Enter PACF Lag (MA)</label><br>
+                        <input type="text" class="siimple-input" placeholder="PACF Lag" id="input_MA">
+                    </div>
+                </div>
+                <div class="siimple-grid-col siimple-grid-col--4">
+                    <br><div class="siimple-btn siimple-btn--navy" id="btn_modeling">Modeling ARIMAX and Hybrid ARIMAX - SVR</div>
+                    <div class="siimple-spinner siimple-spinner--navy" style="margin-top: -16px; margin-right: 18px;" id="loading_modeling"></div>
+                </div>
+                <div class="siimple-grid-row">
+                    <div class="siimple-grid-col siimple-grid-col--6"><br>
+                        <div class="siimple-h5" style="text-align: center;">
+                            Single ARIMAX Model
+                        </div>
+                        <p class="siimple-p" id="desc_arima_1"></p>
+                        <p class="siimple-p" id="desc_arima_2"></p>
+                        <div style="width:100%;">
+                            <canvas id="canvas_predict_arimax"></canvas>
+                        </div>
+                        <p class="siimple-p" id="desc_mape_arima"></p>
+                    </div>
+                    <div class="siimple-grid-col siimple-grid-col--6"><br>
+                        <div class="siimple-h5" style="text-align: center;">
+                            Hybrid ARIMAX - SVR Model
+                        </div>
+                    </div>
+                </div>           
+            </div>
+        </div>
+
+    </body>
+
+</html>
+
