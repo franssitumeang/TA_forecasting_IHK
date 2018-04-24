@@ -51,9 +51,12 @@ def plot_decomposition_ts(request):
         ts = functions.get_ts(path_csv)
         dict_trend = functions.ts_to_dict(functions.get_trend(ts))
         dict_seasonal = functions.ts_to_dict(functions.get_seasonal(ts))
+        desc_trend = ('Grafik diatas menggambarkan trend data IHK yang terdapat pada <b>Daerah '+region_name+'</b>.')
+        desc_seasonal = ('Grafik diatas menggambarkan data IHK musiman yang terdapat pada <b>Daerah ' + region_name + '</b>.')
         data = {'region_name': region_name, 'label_trend': functions.get_index_dict(dict_trend),
                 'data_trend': functions.get_value_dict(dict_trend), 'label_seasonal':functions.get_index_dict(dict_seasonal),
-                'data_seasonal': functions.get_value_dict(dict_seasonal)}
+                'data_seasonal': functions.get_value_dict(dict_seasonal),
+                'desc_trend': desc_trend, 'desc_seasonal':desc_seasonal}
         return JsonResponse(data)
 
 @csrf_exempt

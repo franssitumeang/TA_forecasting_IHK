@@ -185,7 +185,9 @@ $(document).ready(function(){
                 var ctx_trend = document.getElementById('canvas_trend').getContext('2d');
                 var ctx_seasonal = document.getElementById('canvas_seasonal').getContext('2d');
                 window.myLine = new Chart(ctx_trend, config_trend);
-                window.myLine = new Chart(ctx_seasonal, config_seasonal);              
+                window.myLine = new Chart(ctx_seasonal, config_seasonal);
+                $('#desc_trend').html(data.desc_trend);
+                $('#desc_seasonal').html(data.desc_seasonal);
             },
             error:function(m){
             	$('#loading_plot_decomposition').hide();
