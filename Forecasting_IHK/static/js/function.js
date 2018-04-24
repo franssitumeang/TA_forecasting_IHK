@@ -66,6 +66,7 @@ $(document).ready(function(){
                 };               
                 var ctx = document.getElementById('canvas_original').getContext('2d');
                 window.myLine = new Chart(ctx, config);
+                $('#desc_original').html(data.desc);
             },
             error:function(m){  
                 $('#loading_plot_original').hide();              

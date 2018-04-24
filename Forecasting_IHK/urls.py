@@ -8,4 +8,5 @@ urlpatterns = [
     url(r'^/plot_stationary_data', index.plot_stationarity_ts),
     url(r'^/plot_acf_pacf_data', index.plot_acf_pacf_ts),
     url(r'^/modeling', index.modeling),
+    url(r'^/test_1', index.test_1),
 ]

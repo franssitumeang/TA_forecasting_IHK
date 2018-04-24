@@ -8,19 +8,15 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.staticfiles import finders
 import json
 
+a = functions.get_a()
+
+def test_1(request):
+    return HttpResponse(a)
+
 
 def index(request):
-    # fig = plt.figure()
-    # #plt.plot([3, 1, 4, 1, 5], 'ks-', mec='w', mew=5, ms=20)
-    # ts = functions.get_ts('D:/Kuliah/Jupyter Notebook/TA/Forecasting IHK/Forecasting/IHK/Ambon.csv')
-    # plt.plot(ts)
-    # single_chart = dict()
-    # single_chart['id'] = "fig_01"
-    # single_chart['json'] = json.dumps(mpld3.fig_to_dict(fig))
-    # plt.close()
-
     content = {
-        # 'single_chart': single_chart,
+
     }
 
     return render(request, 'index.html', content)
@@ -34,7 +30,15 @@ def plot_original_data(request):
         region_name = functions.get_name_region(csv_file_name)
         ts = functions.get_ts(path_csv)
         dict = functions.ts_to_dict(ts)
-        data = {'region_name':region_name,'label': functions.get_index_dict(dict), 'data': functions.get_value_dict(dict)}
+        label = functions.get_index_dict(dict)
+        time_variance = functions.get_str_time_variance(functions.get_exog('D:/Kuliah/Jupyter Notebook/TA/Forecasting IHK/Forecasting/IHK/'+csv_file_name))
+        desc = ('Grafik diatas menggambarkan distribusi nilai IHK pada <b>Daerah '+region_name+'</b>. '
+                'Data IHK yang terdapat pada <b>Daerah '+region_name+'</b> adalah sebanyak <b>'+str(len(ts))+' data</b> dari '
+                '<b>'+label[0]+'</b> sampai <b>'+label[len(label)-1]+'</b>, data yang digunakan adalah data perbulan.<br><br>'
+                'Pada Simulator ini menggunakan variabel pendukung dalam hal ini adalah <b>Variansi Kalender</b> sebagai salah '
+                'satu faktor dalam melakukan peramalan. Variansi Kalender yang digunakan adalah <b>efek Hari Raya Idul Fitri. </b>'
+                '<b>Data Variansi Kalender</b> yang diperoleh dari data IHK pada <b>Daerah '+region_name+'</b> adalah:<br><b>'+time_variance+'</b>')
+        data = {'region_name':region_name,'label': label, 'data': functions.get_value_dict(dict),'desc':desc}
         return JsonResponse(data)
 
 @csrf_exempt
@@ -108,7 +112,9 @@ def modeling(request):
             orde,desc_arima_1 = functions.parameter_significance_test(ts_log,ts,exogx,region_name)
         desc_arima_2 = functions.get_desc_arimax_2(ts,region_name,orde)
         label,mape_arima,data_test,data_predict_arima = functions.model_arimax(ts_log,exogx,orde)
-        desc_mape_arima = '<b>MAPE = '+str(mape_arima)+'</b>'
+        desc_mape_arima = ('Untuk melakukan evaluasi(mengukur keakuratan <b><i>Forecasting Model</i></b>) Model ARIMAX, pada simulator ini menggunakan '
+                           '<b>MAPE(<i>Mean Absolute Percentage Error</i>).</b>'
+                           '<br>Maka nilai <b>MAPE</b> dari <b>Single Model ARIMAX'+str(orde)+'</b> adalah <b>'+str(mape_arima)+'</b>.')
 
 
         data = {'desc_arima_1': desc_arima_1,
@@ -118,4 +124,3 @@ def modeling(request):
                 'desc_mape_arima': desc_mape_arima,
                 'data_predict_arima': data_predict_arima,}
         return JsonResponse(data)
-

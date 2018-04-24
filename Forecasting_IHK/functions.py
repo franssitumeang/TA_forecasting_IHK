@@ -147,7 +147,7 @@ def get_exog(path):
     return ts
 
 def parameter_significance_test(ts_log, ts, exogx,region_name):
-    ordes = [(1,1,0),(0,1,0),(0,1,1),(1,1,1)]
+    ordes = [(1,1,0),(0,1,0),(0,1,1)]
     orde_rmse = {}
     for o in ordes:
         model = ARIMA(ts_log, order=o, exog=exogx)
@@ -162,8 +162,7 @@ def parameter_significance_test(ts_log, ts, exogx,region_name):
     deskripsi = ('RMSE dari uji signifikansi <b>Model ARIMAX(0,1,0)</b> terhadap parameter AR dan MA adalah<br>'
                 '<b>ARIMAX(0, 1, 0) = '+str(orde_rmse[(0,1,0)])[:5]+'</b><br>'
                 '<b>ARIMAX(1, 1, 0) = '+str(orde_rmse[(1,1,0)])[:5]+'</b><br>'
-                '<b>ARIMAX(0, 1, 1) = '+str(orde_rmse[(0,1,1)])[:5]+'</b><br>'
-                '<b>ARIMAX(1, 1, 1) = '+str(orde_rmse[(1,1,1)])[:5] +'</b><br>')
+                '<b>ARIMAX(0, 1, 1) = '+str(orde_rmse[(0,1,1)])[:5]+'</b><br>')
     orde_rmse = {k: orde_rmse[k] for k in sorted(orde_rmse)}
     deskripsi = (deskripsi + '<br>Dari hasil uji signifikansi didapatkan model dengan RMSE terendah adalah <b>Model ARIMAX'+
                 str(list(orde_rmse.keys())[0])+'</b> dengan nilai <b>RMSE = '+str(list(orde_rmse.values())[0])[:5]+'</b><br>Maka Pemodelan ARIMAX yang digunakan untuk <b>Daerah '+region_name+'</b> adalah <b>Model ARIMAX'+str(list(orde_rmse.keys())[0])+'</b>')
@@ -212,4 +211,17 @@ def model_arimax(ts_log, exogx, orde):
     mape = mean_absolute_error(test, predictions)
     return label, '%.6f' % mape, data_test, data_predict
 
+def get_str_time_variance(x):
+    time_variance = [k for k,v in x.iteritems() if v == 1.0]
+    time_variance = [datetime.datetime.strftime(t, '%B')+' '+ datetime.datetime.strftime(t, '%Y') for t in time_variance]
+    str_time_variance = ''
+    for i in range(len(time_variance)):
+        if(i != len(time_variance)-1):
+            str_time_variance += time_variance[i]+', '
+        else:
+            str_time_variance += time_variance[i]
+    return str_time_variance
 
+def get_a():
+    print('DEBUG fungsi get_a')
+    return 'from get_a'
