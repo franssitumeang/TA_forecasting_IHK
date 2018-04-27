@@ -18,7 +18,6 @@ def index(request):
     content = {
 
     }
-
     return render(request, 'index.html', content)
 
 @csrf_exempt
@@ -73,10 +72,23 @@ def plot_stationarity_ts(request):
         rolmean,rolstd = functions.plot_stationarity_ts(ts_stationer.ts)
         dict_original = functions.ts_to_dict(ts_stationer.ts)
         dict_rolmean = functions.ts_to_dict(rolmean)
+        p_value = functions.test_stationarity(ts)
+        desc = ('Sebelum melakukan pemodelan dengan <b>ARIMAX</b>, terlebih dahulu <b>Data Time Series Harus Stasioner terhadap Rataan '
+                '& Variansi.</b> Dalam melakukan uji stasioner data, pada simulator ini menggunakan <b>Dicky-Fuller test.</b> Syarat dari '
+                '<b>Dicky Fuller test</b> adalah:<br>'
+                '<ul><li><b>Jika p-value > 0.05 : Data Time Series tidak Stasioner</b></li>'
+                '<li><b>Jika p-value <= 0.05 : Data Time Series Stasioner</b></li></ul>'
+                '<b>p-value</b> untuk data awal adalah : <b>'+str(p_value)+'.</b>')
+        if(p_value > 0.05):
+            p_value = functions.test_stationarity(ts_stationer.ts)
+            desc += (' <b>Data Time Series</b> tersebut <b>belum Stasioner</b>. Maka dari itu dilakukan proses <b> Transform & Diffrencing '
+                     ''+str(ts_stationer.d)+' kali</b>. Sehingga diperoleh <b>p-value : '+str(p_value)+'.</b>')
+        desc += (' <b>Data Time Series</b> tersebut <b>sudah Stasioner</b>.<br>Grafik diatas menggambarkan data yang telah stasioner.')
         data = {'label': functions.get_index_dict(dict_original),
                 'data_rolmean': functions.get_value_dict(dict_rolmean),
                 'data_original': functions.get_value_dict(dict_original),
-                'd':ts_stationer.d}
+                'd':ts_stationer.d,
+                'desc': desc}
         return JsonResponse(data)
 
 @csrf_exempt
@@ -91,9 +103,17 @@ def plot_acf_pacf_ts(request):
         ts_stationer.ts = ts
         functions.ts_to_stationer(ts_stationer)
         lag_acf, lag_pacf, y0, ymin, yplus, lag = functions.get_acf_pacf_y0_ymin_yplus_lag(ts_stationer.ts)
+        desc = ('Untuk dapat melakukan pemodelan dengan ARIMAX dibutuhkan 3 paremeter yaitu <b>AR, I,</b> dan <b>MA.</b> '
+                'Pada simulator ini nilai dari parameter <b>I</b> telah otomatis di generate yaitu dengan menghitung banyak '
+                'diffrencing yang dilakukan sehingga data stasioner, namun untuk parameter <b>AR</b> dan <b>MA</b> '
+                'harus dilakukan secara manual yaitu dengan cara:'
+                '<ul><li><b>Untuk parameter AR dengan cara memperhatikan grafik Autocorrelation(ACF), '
+                'di Lag keberapa nilai ACF keluar dari antara titik y = '+str(yplus[0])[:4]+' dan y = '+str(ymin[0])[:5]+'.</b></li>'
+                '<li><b>Untuk parameter MA dengan cara memperhatikan grafik Partial Autocorrelation(PACF), '
+                'di Lag keberapa nilai PACF keluar dari antara titik y = ' +str(yplus[0])[:4] + ' dan y = ' + str(ymin[0])[:5] + '.</b></li></ul>')
         data = {'label': lag, 'data_acf':lag_acf,
                 'data_pacf':lag_pacf,'y0':y0,
-                'ymin':ymin, 'yplus':yplus}
+                'ymin':ymin, 'yplus':yplus, 'desc':desc}
         return JsonResponse(data)
 
 @csrf_exempt
@@ -114,10 +134,13 @@ def modeling(request):
         if(orde == (0,1,0)):
             orde,desc_arima_1 = functions.parameter_significance_test(ts_log,ts,exogx,region_name)
         desc_arima_2 = functions.get_desc_arimax_2(ts,region_name,orde)
-        label,mape_arima,data_test,data_predict_arima = functions.model_arimax(ts_log,exogx,orde)
-        desc_mape_arima = ('Untuk melakukan evaluasi(mengukur keakuratan <b><i>Forecasting Model</i></b>) Model ARIMAX, pada simulator ini menggunakan '
-                           '<b>MAPE(<i>Mean Absolute Percentage Error</i>).</b>'
-                           '<br>Maka nilai <b>MAPE</b> dari <b>Single Model ARIMAX'+str(orde)+'</b> adalah <b>'+str(mape_arima)+'</b>.')
+        label,mape_arima,rmse_arima, data_test,data_predict_arima = functions.model_arimax(ts_log,exogx,orde)
+        accuracy = (1 - float(mape_arima)) * 100
+        desc_mape_arima = ('Untuk melakukan evaluasi(mengukur<b><i>error rate Forecasting Model</i></b>) Model ARIMAX, pada simulator ini menggunakan '
+                           '<b>RMSE<i>(Root Mean Squared Error)</i>.</b>'
+                           '<br>Nilai <b>RMSE</b> dari <b>Single Model ARIMAX'+str(orde)+'</b> untuk <b>'+str(len(label))+' Data Testing</b>'
+                           ' adalah <b>'+str(rmse_arima)+'</b>.<br><br>'
+                           'Maka Akurasi dari <b>Single Model ARIMAX'+str(orde)+'</b> adalah <b>'+str(accuracy)+'%.</b>')
 
 
         data = {'desc_arima_1': desc_arima_1,

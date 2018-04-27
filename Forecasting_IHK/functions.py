@@ -8,13 +8,13 @@ from statsmodels.tsa.stattools import adfuller, acf, pacf
 import statsmodels.api as sm
 import datetime
 from statsmodels.tsa.arima_model import ARIMA
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 class tsStationerClass():
     d = 0
     ts = None
 
-
+# get file csv from directory
 def get_ts(csv):
     data = pd.read_csv(csv)
     data['Waktu'] = pd.to_datetime(data['Waktu'])
@@ -55,22 +55,26 @@ def plot_decomposition_ts(ts, region_name):
     plt.savefig('D:/Kuliah/Jupyter Notebook/TA/Django Project/Website/Forecasting_IHK/static/images/' + region_name + ' Decomposition.png')
     plt.close()
 
+# transform data
 def transform_log(ts):
     ts_log = np.log(ts)
     return ts_log
 
+# diffrencing data
 def diffrencing_ts(ts):
     ts_diff = ts - ts.shift()
     ts_diff.dropna(inplace=True)
     return ts_diff
 
+# test stationarity data using dickey-fuller
 def test_stationarity(ts):
     dftest = adfuller(ts, autolag='AIC')
     return np.float16(dftest[1])
 
+# make data to stationer
 def ts_to_stationer(ts_class: tsStationerClass) -> tsStationerClass:
     new_ts = transform_log(ts_class.ts)
-    if (test_stationarity(new_ts) < 0.05):
+    if (test_stationarity(new_ts) <= 0.05):
         ts_class.d = 0
         ts_class.ts = new_ts
     else:
@@ -81,6 +85,7 @@ def ts_to_stationer(ts_class: tsStationerClass) -> tsStationerClass:
         ts_class.d = d
         ts_class.ts = new_ts
 
+# get stationarity data
 def plot_stationarity_ts(ts):
     rolmean = ts.rolling(window=52, center=False).mean()
     rolstd = ts.rolling(window=52, center=False).std()
@@ -111,17 +116,19 @@ def get_index_dict(dictionary):
 def get_value_dict(dictionary):
     return [v for i,v in dictionary.items()]
 
+# get seasonal data
 def get_seasonal(ts):
     decomposition = seasonal_decompose(ts)
     seasonal =  decomposition.seasonal
     return seasonal
 
+# get trend data
 def get_trend(ts):
     decomposition = seasonal_decompose(ts)
     trend =  decomposition.trend
-    # seasonal.dropna(inplace=True)
     return trend
 
+# get ACF and PACF value
 def get_acf_pacf_y0_ymin_yplus_lag(ts):
     n_lag = 24
     lag = [i for i in range(n_lag+1)]
@@ -159,7 +166,7 @@ def parameter_significance_test(ts_log, ts, exogx,region_name):
         predictions_ARIMA = np.exp(predictions_ARIMA_log)
         rmse = np.sqrt(sum((predictions_ARIMA-ts)**2)/len(ts))
         orde_rmse[o] = rmse
-    deskripsi = ('RMSE dari uji signifikansi <b>Model ARIMAX(0,1,0)</b> terhadap parameter AR dan MA adalah<br>'
+    deskripsi = ('<b>RMSE<i>(Root Mean Squared Error)</i></b> dari uji signifikansi <b>Model ARIMAX(0,1,0)</b> terhadap parameter AR dan MA adalah:<br>'
                 '<b>ARIMAX(0, 1, 0) = '+str(orde_rmse[(0,1,0)])[:5]+'</b><br>'
                 '<b>ARIMAX(1, 1, 0) = '+str(orde_rmse[(1,1,0)])[:5]+'</b><br>'
                 '<b>ARIMAX(0, 1, 1) = '+str(orde_rmse[(0,1,1)])[:5]+'</b><br>')
@@ -176,7 +183,7 @@ def get_desc_arimax_2(ts, region_name, orde):
            '<br>Berikut merupakan evaluasi dari <b>Single Model ARIMAX'+str(orde)+'</b> dengan menggunakan <b>'+str(test)+' Data Testing</b>.')
     return desc
 
-
+# modeling ARIMAX
 def model_arimax(ts_log, exogx, orde):
     size = int(len(ts_log) - 12)
     train, h_exogx, test = ts_log[0:size], exogx[0:size], ts_log[size:len(ts_log)]
@@ -186,18 +193,15 @@ def model_arimax(ts_log, exogx, orde):
     data_predict = []
     ts = ts_log[size:]
     ts = np.exp(ts)
-
     label = []
     for i, v in ts.iteritems():
         B = datetime.datetime.strftime(i, '%B')
         Y = datetime.datetime.strftime(i, '%Y')
         label.append(B + ' ' + Y)
-
     for t in range(len(test)):
         model = ARIMA(history, order=orde, exog=h_exogx)
         model_fit = model.fit(disp=False, transparams=False)
         output = model_fit.forecast(steps=size + t, exog=h_exogx)
-
         yhat = output[0][0]
         predictions.append(float(yhat))
         obs = test[t]
@@ -209,8 +213,11 @@ def model_arimax(ts_log, exogx, orde):
     data_test = ['%.2f' % i for i in data_test]
     data_predict = ['%.2f' % i for i in data_predict]
     mape = mean_absolute_error(test, predictions)
-    return label, '%.6f' % mape, data_test, data_predict
+    rmse = mean_squared_error(test, predictions)
+    rmse = np.sqrt(rmse)
+    return label, '%.6f' % mape, '%.6f' % rmse, data_test, data_predict
 
+# get time variance from data
 def get_str_time_variance(x):
     time_variance = [k for k,v in x.iteritems() if v == 1.0]
     time_variance = [datetime.datetime.strftime(t, '%B')+' '+ datetime.datetime.strftime(t, '%Y') for t in time_variance]
