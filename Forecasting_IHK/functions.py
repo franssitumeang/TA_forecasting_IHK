@@ -9,6 +9,8 @@ import statsmodels.api as sm
 import datetime
 from statsmodels.tsa.arima_model import ARIMA
 from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVR
 
 class tsStationerClass():
     d = 0
@@ -176,8 +178,9 @@ def parameter_significance_test(ts_log, ts, exogx,region_name):
     return list(orde_rmse.keys())[0],deskripsi
 
 def get_desc_arimax_2(ts, region_name, orde):
+    N_test = int(len(ts) * 20 / 100)
     total_data = len(ts)
-    train,test = len(ts)-12,12
+    train,test = len(ts)-N_test,N_test
     desc = ('Total data yang terdapat pada <b>Daerah '+region_name+'</b> adalah sebanyak <b>'+str(total_data)+' Data</b>. Data tersebut '
            'dibagi menjadi 2 bagian yaitu <b>'+str(train)+' Data Training</b> dan <b>'+str(test)+' Data Testing</b>.<br>'
            '<br>Berikut merupakan evaluasi dari <b>Single Model ARIMAX'+str(orde)+'</b> dengan menggunakan <b>'+str(test)+' Data Testing</b>.')
@@ -185,33 +188,33 @@ def get_desc_arimax_2(ts, region_name, orde):
 
 # modeling ARIMAX
 def model_arimax(ts_log, exogx, orde):
-    size = int(len(ts_log) - 12)
+    N_test = int(len(ts_log) * 20 / 100)
+    size = int(len(ts_log) - N_test)
     train, h_exogx, test = ts_log[0:size], exogx[0:size], ts_log[size:len(ts_log)]
-    history = [h for h in train]
-    predictions = list()
+    history = [float(h) for h in train]
     data_test = []
     data_predict = []
     ts = ts_log[size:]
     ts = np.exp(ts)
+
     label = []
     for i, v in ts.iteritems():
         B = datetime.datetime.strftime(i, '%B')
         Y = datetime.datetime.strftime(i, '%Y')
         label.append(B + ' ' + Y)
+
+    model = ARIMA(history, order=orde, exog=h_exogx)
+    model_fit = model.fit(disp=False, transparams=False)
+    output = model_fit.forecast(steps=size, exog=h_exogx)
     for t in range(len(test)):
-        model = ARIMA(history, order=orde, exog=h_exogx)
-        model_fit = model.fit(disp=False, transparams=False)
-        output = model_fit.forecast(steps=size + t, exog=h_exogx)
-        yhat = output[0][0]
-        predictions.append(float(yhat))
+        yhat = output[0][t]
         obs = test[t]
-        history.append(obs)
-        h_exogx = exogx[:size + t + 1]
         data_test.append(np.exp(obs))
         data_predict.append(np.exp(yhat))
 
     data_test = ['%.2f' % i for i in data_test]
     data_predict = ['%.2f' % i for i in data_predict]
+    predictions = [np.log(float(i)) for i in data_predict]
     mape = mean_absolute_error(test, predictions)
     rmse = mean_squared_error(test, predictions)
     rmse = np.sqrt(rmse)
@@ -229,6 +232,151 @@ def get_str_time_variance(x):
             str_time_variance += time_variance[i]
     return str_time_variance
 
+# Save Residual Data
+def save_residuals(ts,orde,exogx,region_name):
+    model = ARIMA(ts, order=orde, exog=exogx)
+    results_ARIMA = model.fit(disp=-1)
+    predictions_ARIMA_diff = pd.Series(results_ARIMA.fittedvalues, copy=True)
+    predictions_ARIMA_diff_cumsum = predictions_ARIMA_diff.cumsum()
+    predictions_ARIMA_log = pd.Series(ts.ix[0], index=ts.index)
+    predictions_ARIMA_log = predictions_ARIMA_log.add(predictions_ARIMA_diff_cumsum,fill_value=0)
+    predictions_ARIMA = np.exp(predictions_ARIMA_log)
+    residuals = []
+    for i in range(len(ts)):
+        residuals.append(np.exp(ts[i]) - predictions_ARIMA[i])
+    at1 = residuals[2:len(residuals) - 1]
+    at2 = residuals[1:len(residuals) - 2]
+    at3 = residuals[:len(residuals) - 3]
+    residuals = residuals[3:]
+    residulas_df = pd.DataFrame(
+    {'residual': residuals,
+     'at1': at1,
+     'at2': at2,
+     'at3': at3
+    })
+    residulas_df.to_csv('D:/Kuliah/Jupyter Notebook/TA/Forecasting IHK/Forecasting/Residual/'+region_name+' Residual.csv', encoding='utf-8', index=False)
+
+def get_residual_data(region_name):
+    return pd.read_csv('D:/Kuliah/Jupyter Notebook/TA/Forecasting IHK/Forecasting/Residual/'+region_name+' Residual.csv')
+
+# modeling ARIMAX - SVR
+def model_arimax_svr(ts_log, exogx, orde, residual_data):
+    N_test = int(len(ts_log) * 20 / 100)
+    #     SVR
+    train_residual = residual_data[:len(residual_data) - N_test]
+    test_residual = residual_data[len(residual_data) - N_test:]
+    data_test = []
+    data_predict = []
+    rmses = []
+    mapes = []
+    label = []
+    atmin = [1, 2, 3]
+    for at in atmin:
+        X_train_residual = train_residual.values[:, :at]
+        Y_train_residual = train_residual.values[:, 3]
+
+        X_test_residual = test_residual.values[:, :at]
+        X_train_residual, X_validation, Y_train_residual, Y_validation = train_test_split(X_train_residual,
+                                                                                          Y_train_residual, test_size=0.2,
+                                                                                          random_state=0)
+        svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1)
+        svr_rbf.fit(X_train_residual, Y_train_residual)
+        Y_predictSVR = svr_rbf.predict(X_test_residual)
+        # ARIMAX
+        size = int(len(ts_log) - N_test)
+        train, h_exogx, test = ts_log[0:size], exogx[0:size], ts_log[size:len(ts_log)]
+        history = [h for h in train]
+        ts = ts_log[size:]
+        ts = np.exp(ts)
+
+        for i, v in ts.iteritems():
+            B = datetime.datetime.strftime(i, '%B')
+            Y = datetime.datetime.strftime(i, '%Y')
+            label.append(B + ' ' + Y)
+
+        model = ARIMA(history, order=orde, exog=h_exogx)
+        model_fit = model.fit(disp=False, transparams=False)
+        output = model_fit.forecast(steps=size, exog=h_exogx)
+        for t in range(len(test)):
+            yhat = output[0][t]
+            obs = test[t]
+            data_test.append(np.exp(obs))
+            data_predict.append(np.exp(yhat) + Y_predictSVR[t])
+        data_predict = ['%.2f' % float(i) for i in data_predict]
+        predictions = [np.log(float(i)) for i in data_predict]
+        test = [np.log(float(i)) for i in data_test]
+        mape = mean_absolute_error(test, predictions)
+        mapes.append(mape)
+        rmse = mean_squared_error(test, predictions)
+        rmse = np.sqrt(rmse)
+        rmses.append(rmse)
+    index = rmses.index(min(rmses))
+    return label, '%.6f' % mapes[index], '%.6f' % rmses[index], data_test, data_predict, index
+
+def get_desc_hybrid_1(orde, index):
+    desc = ('Hasil dari pemodelan <b>Single ARIMAX'+str(orde)+'</b> akan menghasilkan <b>Nilai Error</b> atau <b>Residual.</b><br>'
+            '<b>Residual</b> tersebut akan dimodelkan dengan menggunakan <b>SVR</b> untuk mendapatkan <b>Model Hybrid ARIMAX - SVR.</b> '
+            'Pada simulator ini menggunakan <b>Lag 1, 2, dan 3</b> dari <b>Residual</b> sebagai <b>Input SVR</b><br><br>'
+            '<b>Hasil Uji Input SVR,</b> didapat <b>Model Hybrid</b> terbaik adalah dengan <b>Input SVR</b> menggunakan ')
+    if(index == 1):
+        desc += ('<b>Lag 1.</b>')
+    elif(index == 2):
+        desc += ('<b>Lag 1 dan 2.</b>')
+    elif (index == 3):
+        desc += ('<b>Lag 1, 2 dan 3.</b>')
+    return desc
+
+def get_desc_hybrid_2(ts, orde):
+    test = int(len(ts) * 20 / 100)
+    desc = ('Berikut merupakan evaluasi dari <b>Hybrid Model ARIMAX'+str(orde)+' - SVR</b> dengan menggunakan <b>'+str(test)+' Data Testing</b>.')
+    return desc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def get_a():
     print('DEBUG fungsi get_a')
     return 'from get_a'
+

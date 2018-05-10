@@ -107,9 +107,9 @@ def plot_acf_pacf_ts(request):
                 'Pada simulator ini nilai dari parameter <b>I</b> telah otomatis di generate yaitu dengan menghitung banyak '
                 'diffrencing yang dilakukan sehingga data stasioner, namun untuk parameter <b>AR</b> dan <b>MA</b> '
                 'harus dilakukan secara manual yaitu dengan cara:'
-                '<ul><li><b>Untuk parameter AR dengan cara memperhatikan grafik Autocorrelation(ACF), '
+                '<ul><li><b>Untuk orde P yang digunakan sebagai orde parameter AR perhatikan grafik Autocorrelation(ACF), '
                 'di Lag keberapa nilai ACF keluar dari antara titik y = '+str(yplus[0])[:4]+' dan y = '+str(ymin[0])[:5]+'.</b></li>'
-                '<li><b>Untuk parameter MA dengan cara memperhatikan grafik Partial Autocorrelation(PACF), '
+                '<li><b>Untuk orde Q yang digunakan sebagai orde parameter MA perhatikan grafik Partial Autocorrelation(PACF), '
                 'di Lag keberapa nilai PACF keluar dari antara titik y = ' +str(yplus[0])[:4] + ' dan y = ' + str(ymin[0])[:5] + '.</b></li></ul>')
         data = {'label': lag, 'data_acf':lag_acf,
                 'data_pacf':lag_pacf,'y0':y0,
@@ -135,18 +135,33 @@ def modeling(request):
             orde,desc_arima_1 = functions.parameter_significance_test(ts_log,ts,exogx,region_name)
         desc_arima_2 = functions.get_desc_arimax_2(ts,region_name,orde)
         label,mape_arima,rmse_arima, data_test,data_predict_arima = functions.model_arimax(ts_log,exogx,orde)
-        accuracy = (1 - float(mape_arima)) * 100
+        accuracy_arima = (1 - float(mape_arima)) * 100
         desc_mape_arima = ('Untuk melakukan evaluasi(mengukur<b><i>error rate Forecasting Model</i></b>) Model ARIMAX, pada simulator ini menggunakan '
                            '<b>RMSE<i>(Root Mean Squared Error)</i>.</b>'
                            '<br>Nilai <b>RMSE</b> dari <b>Single Model ARIMAX'+str(orde)+'</b> untuk <b>'+str(len(label))+' Data Testing</b>'
                            ' adalah <b>'+str(rmse_arima)+'</b>.<br><br>'
-                           'Maka Akurasi dari <b>Single Model ARIMAX'+str(orde)+'</b> adalah <b>'+str(accuracy)+'%.</b>')
+                           'Maka Akurasi dari <b>Single Model ARIMAX'+str(orde)+'</b> adalah <b>'+str(accuracy_arima)+'%.</b>')
 
+        functions.save_residuals(ts_log,orde,exogx,region_name)
+        residual_data = functions.get_residual_data(region_name)
+        # HYBRID
+        _, mape_hybrid, rmse_hybrid, _, data_predict_hybrid, index = functions.model_arimax_svr(ts_log, exogx, orde, residual_data)
+        desc_hybrid_1 = functions.get_desc_hybrid_1(orde, index)
+        desc_hybrid_2 = functions.get_desc_hybrid_2(ts,orde)
+        accuracy_hybrid = (1 - float(mape_hybrid)) * 100
+        desc_mape_hybrid = (
+                    'Nilai <b>RMSE</b> dari <b>Hybrid Model ARIMAX' + str(orde) + ' - SVR</b> untuk <b>' + str(
+                    len(label)) + ' Data Testing</b> adalah <b>' + str(rmse_hybrid) + '</b>.<br><br>'
+                    'Maka Akurasi dari <b>Hybrid Model ARIMAX' + str(orde) + ' - SVR</b> adalah <b>' + str(accuracy_hybrid) + '%.</b>')
 
         data = {'desc_arima_1': desc_arima_1,
                 'desc_arima_2': desc_arima_2,
                 'label': label,
                 'data_test': data_test,
                 'desc_mape_arima': desc_mape_arima,
-                'data_predict_arima': data_predict_arima,}
+                'data_predict_arima': data_predict_arima,
+                'data_predict_hybrid': data_predict_hybrid,
+                'desc_hybrid_1': desc_hybrid_1,
+                'desc_hybrid_2': desc_hybrid_2,
+                'desc_mape_hybrid': desc_mape_hybrid}
         return JsonResponse(data)

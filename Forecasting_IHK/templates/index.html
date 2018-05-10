@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     {% load staticfiles %}
     <title>Forecasting IHK</title>
-    <!-- Import siimple -->
     <link rel="stylesheet" type="text/css" href="{% static 'css/siimple.css' %}"/>
     <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}"/>
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script> -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
     <script src="{% static 'js/function.js' %}"></script>
     <script src="{% static 'js/Chart.bundle.js' %}"></script>
@@ -55,16 +53,15 @@
                 <div class="siimple-h6">
                     <u>TREND AND SEASONAL DATA</u>
                 </div>
-                <div class="siimple-grid-row">
-                    
-                    <div class="siimple-grid-col siimple-grid-col--6">
-                        <div style="width:100%;">
+                <div class="siimple-grid-row">                    
+                    <div class="siimple-grid-col siimple-grid-col--12">
+                        <div style="width:75%;">
                             <canvas id="canvas_trend"></canvas>
                             <p class="siimple-p" id="desc_trend"></p>
                         </div>
                     </div>
-                    <div class="siimple-grid-col siimple-grid-col--6">
-                        <div style="width:100%;">
+                    <div class="siimple-grid-col siimple-grid-col--12">
+                        <div style="width:75%;">
                             <canvas id="canvas_seasonal"></canvas>
                             <p class="siimple-p" id="desc_seasonal"></p>
                         </div>
@@ -121,21 +118,29 @@
                     <div class="siimple-spinner siimple-spinner--navy" style="margin-top: -16px; margin-left: 300px;" id="loading_modeling"></div>
                 </div>
                 <div class="siimple-grid-row">
-                    <div class="siimple-grid-col siimple-grid-col--6"><br>
+                    <div class="siimple-grid-col siimple-grid-col--12"><br>
                         <div class="siimple-h5" style="text-align: center;">
                             SINGLE ARIMAX MODEL
-                        </div>
-                        <p class="siimple-p" id="desc_arima_1"></p>
-                        <p class="siimple-p" id="desc_arima_2"></p>
-                        <div style="width:100%;">
+                        </div>                        
+                        <div style="width:75%;">
+                            <p class="siimple-p" id="desc_arima_1"></p>
+                            <p class="siimple-p" id="desc_arima_2"></p>
                             <canvas id="canvas_predict_arimax"></canvas>
+                            <p class="siimple-p" id="desc_mape_arima"></p>
                         </div>
-                        <p class="siimple-p" id="desc_mape_arima"></p>
+                        
                     </div>
-                    <div class="siimple-grid-col siimple-grid-col--6"><br>
+                    <div class="siimple-grid-col siimple-grid-col--12"><br>
                         <div class="siimple-h5" style="text-align: center;">
                             HYBRID ARIMAX - SVR MODEL
                         </div>
+                        <div style="width:75%;">
+                            <p class="siimple-p" id="desc_hybrid_1"></p>
+                            <p class="siimple-p" id="desc_hybrid_2"></p>
+                            <canvas id="canvas_predict_hybrid"></canvas>
+                            <p class="siimple-p" id="desc_mape_hybrid"></p>
+                        </div>
+                        
                     </div>
                 </div>           
             </div>

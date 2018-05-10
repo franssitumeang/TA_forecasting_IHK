@@ -39,6 +39,8 @@ $(document).ready(function(){
                 $('#loading_modeling').hide();
                 $('#desc_arima_1').html(data.desc_arima_1);
                 $('#desc_arima_2').html(data.desc_arima_2);
+                $('#desc_hybrid_1').html(data.desc_hybrid_1);
+                $('#desc_hybrid_2').html(data.desc_hybrid_2);
                 var config_model_arimax = {
                     type: 'line',
                     data: {
@@ -61,7 +63,7 @@ $(document).ready(function(){
                         responsive: true,
                         title: {
                             display: true,
-                            text: 'Evaluate Model ARIMAX'
+                            text: 'Evaluate Single Model ARIMAX'
                         },
                         tooltips: {
                             mode: 'index',
@@ -89,55 +91,62 @@ $(document).ready(function(){
                         }
                     }
                 };    
-                // var config_seasonal = {
-                //     type: 'line',
-                //     data: {
-                //         labels: data.label_seasonal,
-                //         datasets: [{
-                //             label: 'Seasonal',
-                //             backgroundColor: window.chartColors.blue,
-                //             borderColor: window.chartColors.blue,
-                //             data: data.data_seasonal,
-                //             fill: false,
-                //         }]
-                //     },
-                //     options: {
-                //         responsive: true,
-                //         title: {
-                //             display: true,
-                //             text: 'Seasonal Data'
-                //         },
-                //         tooltips: {
-                //             mode: 'index',
-                //             intersect: false,
-                //         },
-                //         hover: {
-                //             mode: 'nearest',
-                //             intersect: true
-                //         },
-                //         scales: {
-                //             xAxes: [{
-                //                 display: true,
-                //                 scaleLabel: {
-                //                     display: true,
-                //                     labelString: ''
-                //                 }
-                //             }],
-                //             yAxes: [{
-                //                 display: true,
-                //                 scaleLabel: {
-                //                     display: true,
-                //                     labelString: ''
-                //                 }
-                //             }]
-                //         }
-                //     }
-                // };               
+                var config_model_hybrid = {
+                    type: 'line',
+                    data: {
+                        labels: data.label,
+                        datasets: [{
+                            label: 'Actual',
+                            backgroundColor: window.chartColors.blue,
+                            borderColor: window.chartColors.blue,
+                            data: data.data_test,
+                            fill: false,
+                        },{
+                            label: 'Predict',
+                            backgroundColor: window.chartColors.red,
+                            borderColor: window.chartColors.red,
+                            data: data.data_predict_hybrid,
+                            fill: false,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        title: {
+                            display: true,
+                            text: 'Evaluate Hybrid Model ARIMAX - SVR'
+                        },
+                        tooltips: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        hover: {
+                            mode: 'nearest',
+                            intersect: true
+                        },
+                        scales: {
+                            xAxes: [{
+                                display: true,
+                                scaleLabel: {
+                                    display: true,
+                                    labelString: 'Time'
+                                }
+                            }],
+                            yAxes: [{
+                                display: true,
+                                scaleLabel: {
+                                    display: true,
+                                    labelString: 'IHK Value'
+                                }
+                            }]
+                        }
+                    }
+                };               
                 var ctx_model_arimax = document.getElementById('canvas_predict_arimax').getContext('2d');
-                // var ctx_seasonal = document.getElementById('canvas_seasonal').getContext('2d');
+                var ctx_model_hybrid = document.getElementById('canvas_predict_hybrid').getContext('2d');
                 window.myLine = new Chart(ctx_model_arimax, config_model_arimax);
-                // window.myLine = new Chart(ctx_seasonal, config_seasonal);
-                 $('#desc_mape_arima').html(data.desc_mape_arima);
+                window.myLine = new Chart(ctx_model_hybrid, config_model_hybrid);
+                $('#desc_mape_arima').html(data.desc_mape_arima);
+                $('#desc_mape_hybrid').html(data.desc_mape_hybrid);
             },
             error:function(m){
                 $('#loading_modeling').hide();
