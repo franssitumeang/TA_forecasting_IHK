@@ -212,11 +212,8 @@ def model_arimax(ts_log, exogx, orde):
         data_test.append(np.exp(obs))
         data_predict.append(np.exp(yhat))
 
-    data_test = ['%.2f' % i for i in data_test]
-    data_predict = ['%.2f' % i for i in data_predict]
-    predictions = [np.log(float(i)) for i in data_predict]
-    mape = mean_absolute_error(test, predictions)
-    rmse = mean_squared_error(test, predictions)
+    mape = accuracy(data_test,data_predict)
+    rmse = mean_squared_error(data_test, data_predict)
     rmse = np.sqrt(rmse)
     return label, '%.6f' % mape, '%.6f' % rmse, data_test, data_predict
 
@@ -265,23 +262,27 @@ def model_arimax_svr(ts_log, exogx, orde, residual_data):
     #     SVR
     train_residual = residual_data[:len(residual_data) - N_test]
     test_residual = residual_data[len(residual_data) - N_test:]
+    data_predict_hybrid = []
     data_test = []
-    data_predict = []
     rmses = []
     mapes = []
     label = []
     atmin = [1, 2, 3]
     for at in atmin:
+        data_test = []
+        data_predict = []
         X_train_residual = train_residual.values[:, :at]
         Y_train_residual = train_residual.values[:, 3]
 
         X_test_residual = test_residual.values[:, :at]
+
         X_train_residual, X_validation, Y_train_residual, Y_validation = train_test_split(X_train_residual,
                                                                                           Y_train_residual, test_size=0.2,
                                                                                           random_state=0)
         svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1)
         svr_rbf.fit(X_train_residual, Y_train_residual)
         Y_predictSVR = svr_rbf.predict(X_test_residual)
+
         # ARIMAX
         size = int(len(ts_log) - N_test)
         train, h_exogx, test = ts_log[0:size], exogx[0:size], ts_log[size:len(ts_log)]
@@ -302,27 +303,25 @@ def model_arimax_svr(ts_log, exogx, orde, residual_data):
             obs = test[t]
             data_test.append(np.exp(obs))
             data_predict.append(np.exp(yhat) + Y_predictSVR[t])
-        data_predict = ['%.2f' % float(i) for i in data_predict]
-        predictions = [np.log(float(i)) for i in data_predict]
-        test = [np.log(float(i)) for i in data_test]
-        mape = mean_absolute_error(test, predictions)
+        data_predict_hybrid.append(data_predict)
+        mape = accuracy(data_test, data_predict)
         mapes.append(mape)
-        rmse = mean_squared_error(test, predictions)
+        rmse = mean_squared_error(data_test, data_predict)
         rmse = np.sqrt(rmse)
         rmses.append(rmse)
     index = rmses.index(min(rmses))
-    return label, '%.6f' % mapes[index], '%.6f' % rmses[index], data_test, data_predict, index
+    return label, '%.6f' % mapes[index], '%.6f' % rmses[index], data_test, data_predict_hybrid[index], index
 
 def get_desc_hybrid_1(orde, index):
     desc = ('Hasil dari pemodelan <b>Single ARIMAX'+str(orde)+'</b> akan menghasilkan <b>Nilai Error</b> atau <b>Residual.</b><br>'
             '<b>Residual</b> tersebut akan dimodelkan dengan menggunakan <b>SVR</b> untuk mendapatkan <b>Model Hybrid ARIMAX - SVR.</b> '
             'Pada simulator ini menggunakan <b>Lag 1, 2, dan 3</b> dari <b>Residual</b> sebagai <b>Input SVR</b><br><br>'
             '<b>Hasil Uji Input SVR,</b> didapat <b>Model Hybrid</b> terbaik adalah dengan <b>Input SVR</b> menggunakan ')
-    if(index == 1):
+    if(index == 0):
         desc += ('<b>Lag 1.</b>')
-    elif(index == 2):
+    elif(index == 1):
         desc += ('<b>Lag 1 dan 2.</b>')
-    elif (index == 3):
+    elif (index == 2):
         desc += ('<b>Lag 1, 2 dan 3.</b>')
     return desc
 
@@ -330,6 +329,14 @@ def get_desc_hybrid_2(ts, orde):
     test = int(len(ts) * 20 / 100)
     desc = ('Berikut merupakan evaluasi dari <b>Hybrid Model ARIMAX'+str(orde)+' - SVR</b> dengan menggunakan <b>'+str(test)+' Data Testing</b>.')
     return desc
+
+def accuracy(data_test,data_predict):
+    sum_abs = 0.0
+    sum_test = 0.0
+    for i in range(len(data_test)):
+        sum_abs += np.abs(data_test[i] - data_predict[i])
+        sum_test += data_test[i]
+    return (((sum_abs/sum_test)/len(data_test))*100)
 
 
 
