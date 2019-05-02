@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     {% load staticfiles %}
-    <title>Forecasting IHK</title>
+    <title id="title_page">Forecasting IHK</title>
     <link rel="stylesheet" type="text/css" href="{% static 'css/siimple.css' %}"/>
     <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}"/>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
@@ -16,7 +16,7 @@
             <div class="siimple-box-title">Simulator Forecasting IHK</div>
             <div class="siimple-box-subtitle">Using Hybrid ARIMAX - SVR Algorithm</div>
             <div class="siimple-tip siimple-tip--teal">
-                ---
+                --sidua--
             </div>
         </div>
         <div class="siimple-grid">
@@ -125,8 +125,13 @@
                         <div style="width:75%;">
                             <p class="siimple-p" id="desc_arima_1"></p>
                             <p class="siimple-p" id="desc_arima_2"></p>
-                            <canvas id="canvas_predict_arimax"></canvas>
-                            <p class="siimple-p" id="desc_mape_arima"></p>
+                        </div>
+                        <div class="siimple-grid-row">
+                            <div class="siimple-grid-col siimple-grid-col--9">
+                                <canvas id="canvas_predict_arimax_70_30"></canvas>
+                                <canvas id="canvas_predict_arimax_80_20"></canvas>
+                                <canvas id="canvas_predict_arimax_90_10"></canvas>
+                            </div>
                         </div>
                         
                     </div>
@@ -136,17 +141,128 @@
                         </div>
                         <div style="width:75%;">
                             <p class="siimple-p" id="desc_hybrid_1"></p>
-                            <p class="siimple-p" id="desc_hybrid_2"></p>
-                            <canvas id="canvas_predict_hybrid"></canvas>
-                            <p class="siimple-p" id="desc_mape_hybrid"></p>
+                            <p class="siimple-p" id="desc_hybrid_2"></p>                            
                         </div>
-                        
+                        <div class="siimple-grid-row">
+                            <div class="siimple-grid-col siimple-grid-col--9">
+                                <canvas id="canvas_predict_hybrid_70_30"></canvas>
+                                <canvas id="canvas_predict_hybrid_80_20"></canvas>
+                                <canvas id="canvas_predict_hybrid_90_10"></canvas>
+                            </div>
+                        </div>
                     </div>
-                </div>           
+                </div>
+                <br><br>
+                <div class="siimple-grid-row">
+                    <div class="siimple-grid-col siimple-grid-col--10">
+                        <div class="siimple-h6" style="text-align: center;">
+                            Tabel RMSE(error rate) dan Akurasi Model pada Single ARIMAX dan Hybrid ARIMAX-SVR
+                        </div>
+                        <table class="siimple-table siimple-table--striped siimple-table--border">
+                            <thead class="siimple-table-header">
+                                <th ></th>
+                                <th class="siimple-table-cell" colspan="2">RMSE <i>(Error Rate)</i></th>
+                                <th class="siimple-table-cell" colspan="2">Akurasi</th>
+                            </thead>
+                            <thead class="siimple-table-header">
+                                <th></th>
+                                <th class="siimple-table-cell">Single Model ARIMAX</th>
+                                <th class="siimple-table-cell">Hybrid Model ARIMAX - SVR</th>
+                                <th class="siimple-table-cell">Single Model ARIMAX</th>
+                                <th class="siimple-table-cell">Hybrid Model ARIMAX - SVR</th>
+                            </thead>
+                            <tbody class="siimple-table-body">
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" style="font-weight:bold;">75% Train & 25% Test</td>
+                                    <td class="siimple-table-cell" id="rmse_arimax_30"></td>
+                                    <td class="siimple-table-cell" id="rmse_hybrid_30"></td>
+                                    <td class="siimple-table-cell" id="accuracy_arimax_30"></td>
+                                    <td class="siimple-table-cell" id="accuracy_hybrid_30"></td>
+                                </tr>
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" style="font-weight:bold;">85% Train & 15% Test</td>
+                                    <td class="siimple-table-cell" id="rmse_arimax_20"></td>
+                                    <td class="siimple-table-cell" id="rmse_hybrid_20"></td>
+                                    <td class="siimple-table-cell" id="accuracy_arimax_20"></td>
+                                    <td class="siimple-table-cell" id="accuracy_hybrid_20"></td>
+                                </tr>
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" style="font-weight:bold;">90% Train & 10% Test</td>
+                                    <td class="siimple-table-cell" id="rmse_arimax_10"></td>
+                                    <td class="siimple-table-cell" id="rmse_hybrid_10"></td>
+                                    <td class="siimple-table-cell" id="accuracy_arimax_10"></td>
+                                    <td class="siimple-table-cell" id="accuracy_hybrid_10"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="siimple-grid-row">
+                    
+                        <div class="siimple-h6" style="text-align: center;">
+                            Tabel Prediksi 12 Data ke Depan dengan Menggunakan Model Terbaik : Single Model ARIMAX
+                        </div>
+                        <div class="siimple-grid-col siimple-grid-col--5">
+                        <table class="siimple-table siimple-table--striped siimple-table--border">
+                            <thead class="siimple-table-header">
+                                <th class="siimple-table-cell">Waktu</th>
+                                <th class="siimple-table-cell">IHK</th>
+                            </thead>                            
+                            <tbody class="siimple-table-body">
+                                <tr class="siimple-table-row">                                    
+                                    <td class="siimple-table-cell" id="date_1"></td>
+                                    <td class="siimple-table-cell" id="ihk_1"></td>                                 
+                                </tr>
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" id="date_2"></td>
+                                    <td class="siimple-table-cell" id="ihk_2"></td>
+                                </tr>
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" id="date_3"></td>
+                                    <td class="siimple-table-cell" id="ihk_3"></td>
+                                </tr>
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" id="date_4"></td>
+                                    <td class="siimple-table-cell" id="ihk_4"></td>
+                                </tr>
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" id="date_5"></td>
+                                    <td class="siimple-table-cell" id="ihk_5"></td>
+                                </tr>
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" id="date_6"></td>
+                                    <td class="siimple-table-cell" id="ihk_6"></td>
+                                </tr>
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" id="date_7"></td>
+                                    <td class="siimple-table-cell" id="ihk_7"></td>
+                                </tr>
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" id="date_8"></td>
+                                    <td class="siimple-table-cell" id="ihk_8"></td>
+                                </tr>
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" id="date_9"></td>
+                                    <td class="siimple-table-cell" id="ihk_9"></td>
+                                </tr>
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" id="date_10"></td>
+                                    <td class="siimple-table-cell" id="ihk_10"></td>
+                                </tr>
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" id="date_11"></td>
+                                    <td class="siimple-table-cell" id="ihk_11"></td>
+                                </tr>
+                                <tr class="siimple-table-row">
+                                    <td class="siimple-table-cell" id="date_12"></td>
+                                    <td class="siimple-table-cell" id="ihk_12"></td> 
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>         
             </div>
         </div>
-
     </body>
-
 </html>
 
